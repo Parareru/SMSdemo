@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -40,9 +41,9 @@ public class MyActivity extends Activity {
                 Iterator<String> iterator = addressToPerson.keySet().iterator();
                 while(iterator.hasNext()){
                     String number = iterator.next();
+                    Log.d("SMS", number);
                     if(addressToPerson.get(number) == personName){
                         personNumber.add(number);
-                        personNumber.add("+86" + number);
                     }
                 }
                 Intent intent = new Intent(MyActivity.this, ShowSMS.class);
@@ -65,8 +66,6 @@ public class MyActivity extends Activity {
             int indexAddress = cursor.getColumnIndex("address");
             int indexBody = cursor.getColumnIndex("body");
             int indexDate = cursor.getColumnIndex("date");
-            int indexType = cursor.getColumnIndex("type");
-
             do{
                 String strAddress = cursor.getString(indexAddress);
                 if(strAddress.charAt(0) == '+'){
