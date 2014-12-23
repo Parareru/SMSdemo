@@ -50,8 +50,8 @@ public class ShowSMS extends Activity {
             selection += " or address = ?";
             selectionArgs[i] = number.get(i);
         }
-        //Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, "date desc");
-        Cursor cursor = getContentResolver().query(uri, projection, null, null, "date desc");
+        Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, "date desc");
+        //Cursor cursor = getContentResolver().query(uri, projection, null, null, "date desc");
 
         if(cursor.moveToFirst()){
             int indexBody = cursor.getColumnIndex("body");

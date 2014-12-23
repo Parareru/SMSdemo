@@ -42,6 +42,7 @@ public class MyActivity extends Activity {
                     String number = iterator.next();
                     if(addressToPerson.get(number) == personName){
                         personNumber.add(number);
+                        personNumber.add("+86" + number);
                     }
                 }
                 Intent intent = new Intent(MyActivity.this, ShowSMS.class);
@@ -74,6 +75,7 @@ public class MyActivity extends Activity {
                 String strPerson = addressToPerson.get(strAddress);
                 if(strPerson == null){
                     strPerson = strAddress;
+                    addressToPerson.put(strAddress, strAddress);
                 }
 
                 if(Contects.get(strPerson) == null) {
