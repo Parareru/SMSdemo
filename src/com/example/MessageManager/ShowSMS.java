@@ -23,26 +23,60 @@ import java.util.*;
 public class ShowSMS extends Activity {
 
     private List<String> smsList = new ArrayList<String>();
+    private List<Message> msgList = new ArrayList<Message>();
     private ArrayList<String> number = new ArrayList<String>();
+    private String name;
     private Button send = null;
     private EditText msg = null;
+    private ListView listView;
 
     private IntentFilter sendFilter;
     private SendStatusReceiver sendStatusReceiver;
+    private String[] longListMenu = new String[] {"Delete message", "Copy to clipboard"};
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.show_sms);
         Intent intent = getIntent();
-        String name = intent.getStringExtra("personName");
+        name = intent.getStringExtra("personName");
         //ArrayList<String> number = intent.getStringArrayListExtra("personNumber");
         readNumbers(name);
         getSMS(name, number);
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(ShowSMS.this, android.R.layout.simple_list_item_1, smsList);
-        ListView listView = (ListView) findViewById(R.id.listView);
+        //ArrayAdapter<String> adapter = new ArrayAdapter<String>(ShowSMS.this, android.R.layout.simple_list_item_1, smsList);
+        final MessageAdapter adapter = new MessageAdapter(ShowSMS.this, R.layout.message_item, msgList);
+        listView = (ListView) findViewById(R.id.listView);
         listView.setAdapter(adapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                final Message thisMessage = msgList.get(position);    //Get the current message
+
+                AlertDialog.Builder dialog = new AlertDialog.Builder(ShowSMS.this);
+                dialog.setTitle("You are going to");
+                dialog.setCancelable(true);
+                dialog.setItems(longListMenu, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch(which){
+                            case 0:
+                                //Toast.makeText(ShowSMS.this, "Applying deleting message", Toast.LENGTH_SHORT).show();
+                                deleteMsg(thisMessage);
+                                break;
+                            case 1:
+                                Toast.makeText(ShowSMS.this, "The message has been copied to the clipboard", Toast.LENGTH_LONG).show();
+                                break;
+                            default:
+                                break;
+                        }
+                        dialog.dismiss();
+                    }
+                });
+
+                dialog.show();
+            }
+        });
 
         //Register the filter and broad cast to check sms sending status
         sendFilter = new IntentFilter();
@@ -89,10 +123,11 @@ public class ShowSMS extends Activity {
     }
 
     public void getSMS(String name, ArrayList<String> number){
+        msgList.clear();
         final String SMS_URI_ALL = "content://sms/";
 
         Uri uri = Uri.parse(SMS_URI_ALL);
-        String[] projection = new String[] { "body", "date", "type", "read", "status" };
+        String[] projection = new String[] { "_id", "body", "date", "type", "read", "status" };
         String selection = "address = ?";
         String[] selectionArgs = new String[number.size()];
         selectionArgs[0] = number.get(0);
@@ -110,6 +145,7 @@ public class ShowSMS extends Activity {
             int indexType = cursor.getColumnIndex("type");
             int indexRead = cursor.getColumnIndex("read");
             int indexStatus = cursor.getColumnIndex("status");
+            int indexId = cursor.getColumnIndex("_id");
 
             do{
                 String strBody = cursor.getString(indexBody);
@@ -122,6 +158,7 @@ public class ShowSMS extends Activity {
                 int type = cursor.getInt(indexType);
                 int status = cursor.getInt(indexStatus);
                 int read = cursor.getInt(indexRead);
+                int _id = cursor.getInt(indexId);
 
                 String newStr = "";
                 switch(type){
@@ -153,8 +190,11 @@ public class ShowSMS extends Activity {
                 }
                 newStr += " " + read;
 
-                smsList.add(newStr);
-                Log.d("SMS", newStr);
+                //smsList.add(newStr);
+                Message newMsg = new Message( (type==1), strBody);
+                newMsg.setId(_id);
+                msgList.add(newMsg);
+                //Log.d("SMS", newStr);
             }while(cursor.moveToNext());
         }
 
@@ -165,11 +205,14 @@ public class ShowSMS extends Activity {
         Cursor cursor = null;
         try{
             cursor = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " = ?", new String[]{ personName }, null);
-            while(cursor.moveToNext()){
+            number.add(personName);
+            number.add("+86" + personName);
+            while (cursor.moveToNext()) {
                 //String name = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
                 String currentNumber = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
 
                 number.add(currentNumber);
+                number.add("+86" + currentNumber);
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -189,5 +232,18 @@ public class ShowSMS extends Activity {
                 Toast.makeText(context, "Send failed", Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+    private void deleteMsg(Message msg){
+        Uri sms = Uri.parse("content://sms/");
+        getContentResolver().delete(sms, "_id = ?", new String[]{Integer.toString(msg.getId())});
+        refreshList();
+        Toast.makeText(ShowSMS.this, "The message has been deleted", Toast.LENGTH_LONG).show();
+    }
+
+    private void refreshList(){
+        getSMS(name, number);
+        final MessageAdapter adapter = new MessageAdapter(ShowSMS.this, R.layout.message_item, msgList);
+        listView.setAdapter(adapter);
     }
 }

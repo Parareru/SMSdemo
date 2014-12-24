@@ -30,6 +30,11 @@ public class ContectViewAdapter extends ArrayAdapter<ContectView> {
         personName.setText(contectView.getName());
         date.setText(contectView.getDate());
         body.setText(contectView.getBody());
+        if(contectView.getRead() == 0){
+            personName.getPaint().setFakeBoldText(true);
+            date.getPaint().setFakeBoldText(true);
+            body.getPaint().setFakeBoldText(true);
+        }
 
         return view;
     }
